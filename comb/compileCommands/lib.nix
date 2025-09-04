@@ -1,16 +1,18 @@
-{
-  inputs,
-  cell
+{ inputs
+, cell
 }: {
   compileCommands = pkg:
     pkg.overrideAttrs (super: {
-      installPhase = "cp compile_commands.json $out";
-      cmakeFlags = super.cmakeFlags ++ ["-DCMAKE_EXPORT_COMPILE_COMMANDS=1"];
+      installPhase = ''
+        sed -si "s/-I\/build/-I\/nix\/store/g" compile_commands.json
+        cp compile_commands.json $out
+      '';
+      cmakeFlags = super.cmakeFlags ++ [ "-DCMAKE_EXPORT_COMPILE_COMMANDS=1" ];
       stdenv = super.stdenv.override (super: {
         cc = super.cc.overrideAttrs (super: {
           installPhase =
             super.installPhase
-            or ""
+              or ""
             + ''
               substitute "${./cc-wrapper-hook}" "$out/nix-support/cc-wrapper-hook" \
                 --replace "@bear@" "${inputs.nixpkgs.bear}/bin/bear"
